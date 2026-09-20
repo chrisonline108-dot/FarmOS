@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#173f2a">
+<title>Green Peas Farm OS</title>
+<style>
+:root{
+  --bg:#f4f7f2;--card:#ffffff;--text:#1f2d23;--muted:#6f7b72;--green:#1f5d3b;
+  --green2:#2f7b4b;--line:#dfe7e1;--light:#e8f1ea;--warn:#fff0df;--bad:#f9e4e4;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+button,input,select{font:inherit}
+button,a{touch-action:manipulation}
+.shell{max-width:1100px;margin:0 auto;padding:16px 16px 96px}
+.header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}
+.brand{font-size:28px;font-weight:800}.sub{font-size:13px;color:var(--muted);margin-top:3px}
+.date{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:13px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px}
+.tabs a{flex:0 0 auto;text-decoration:none;color:var(--text);background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:14px}
+.view{display:none}
+.view:target{display:block}
+#home{display:block}
+body:has(.view:target) #home:not(:target){display:none}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.metric{display:block;text-decoration:none;color:inherit}.metric strong{display:block;font-size:30px;margin-top:6px}.metric span{font-size:12px;color:var(--muted)}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.section-title h2,.section-title h3{margin:0}
+.btn{min-height:44px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:9px 12px;color:var(--text)}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.danger{color:#a34141}
+.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #edf1ed}.row:last-child{border-bottom:0}
+.meta{font-size:12px;color:var(--muted);margin-top:3px}
+.status{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;background:var(--light);white-space:nowrap}
+.status.warn{background:var(--warn)}.status.bad{background:var(--bad)}
+input,select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:11px;padding:9px 10px;background:#fff;color:var(--text);font-size:16px}
+.form{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:8px;margin-bottom:12px}
+.form.five{grid-template-columns:1.1fr 1fr 1fr 1fr auto}
+.progress{height:8px;background:#edf2ee;border-radius:999px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--green2)}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table{width:100%;border-collapse:collapse;min-width:650px}th,td{padding:10px 8px;border-bottom:1px solid #edf1ed;text-align:left;font-size:14px}th{font-size:11px;color:var(--muted);text-transform:uppercase}
+.clean-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.clean{border:1px solid var(--line);background:#fbfdfb;border-radius:16px;padding:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:82px;background:#173f2a;color:#fff;padding:11px 14px;border-radius:12px;display:none;z-index:100}.toast.show{display:block}
+.bottom{display:none}
+@media(max-width:800px){
+ .shell{padding:14px 12px 92px}.header{align-items:flex-start}.brand{font-size:24px}
+ .grid4{grid-template-columns:repeat(2,1fr)}.grid2,.clean-grid{grid-template-columns:1fr}.form,.form.five{grid-template-columns:1fr}
+ .tabs{display:none}
+ .bottom{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+ .bottom a{text-decoration:none;color:var(--muted);text-align:center;padding:9px 2px;min-height:60px;font-size:11px}
+ .bottom b{display:block;font-size:20px;margin-bottom:2px}
+}
+
+.record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}label{display:block;font-size:14px}label input,label select,label textarea{margin-top:7px}textarea{width:100%;min-height:88px;border:1px solid var(--line);border-radius:11px;padding:10px;font:inherit;resize:vertical}.notice{background:var(--warn);border-radius:12px;padding:14px;margin-bottom:14px}.facility h3{margin:0 0 12px}.metric strong{font-size:clamp(18px,3vw,30px)}.status{white-space:normal}details{padding:12px 0;border-bottom:1px solid var(--line)}summary{cursor:pointer;line-height:1.7}dl{margin:0}dt{color:var(--muted);font-size:12px;margin-top:12px}dd{margin:4px 0;white-space:pre-wrap;overflow-wrap:anywhere}.tabs a:focus-visible,.btn:focus-visible{outline:3px solid #7aab83;outline-offset:2px}.btn{cursor:pointer;text-decoration:none;display:inline-block}.record-grid>*{min-width:0}h2{margin:0}.section-title{flex-wrap:wrap}@media(max-width:800px){.tabs{display:flex}.record-grid{grid-template-columns:1fr 1fr}}@media(max-width:480px){.record-grid{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.row{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="header">
+    <div><div class="brand">Green Peas Farm OS</div><div class="sub">Jeita · crops, facilities, animals, workers and farm operations</div></div>
+    <div class="date" id="todayLabel">Today</div>
+  </div>
+
+  <div id="storageNotice" class="notice" hidden role="alert"></div><nav class="tabs">
+    <a href="#home">🏠 Dashboard</a><a href="#farm">🚜 Farm</a><a href="#areas">🏡 Farm Areas</a><a href="#beds">🗺️ 39 Beds</a>
+    <a href="#tasks">✅ Tasks</a><a href="#crops">🌱 Crops</a><a href="#guide">📖 Crop Guide</a>
+    <a href="#coop">🐔 Coop</a><a href="#eggs">🥚 Eggs</a><a href="#workers">👥 Workers</a>
+    <a href="#inventory">📦 Inventory</a><a href="#planting">📅 Planting</a>
+  </nav>
+
+  <section id="home" class="view">
+    <div class="grid4">
+      <a class="card metric" href="#tasks"><div>✅</div><strong id="kpiTasks">0</strong><span>Open tasks</span></a>
+      <a class="card metric" href="#crops"><div>🌱</div><strong id="kpiCrops">0</strong><span>Active crops</span></a>
+      <a class="card metric" href="#eggs"><div>🥚</div><strong id="kpiEggs">0</strong><span>Eggs today</span></a>
+      <a class="card metric" href="#coop"><div>🧹</div><strong id="kpiClean">0</strong><span>Cleaning due</span></a>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="section-title"><h3>Today’s duties</h3><a class="btn primary" href="#tasks">Manage</a></div>
+        <div id="homeTasks"></div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h3>Coop cleaning</h3><a class="btn" href="#coop">Open</a></div>
+        <div id="homeCleaning"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><h3>Crop status</h3><a class="btn" href="#crops">View crops</a></div>
+      <div id="homeCrops" class="grid2"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><div><h3>Green Peas farm profile</h3><div class="sub">Confirmed production facts used by Farm OS.</div></div><a class="btn" href="#farm">Open farm data</a></div>
+      <div class="grid4">
+        <a class="metric" href="#beds"><span>Mapped net beds</span><strong>614.6 m²</strong></a>
+        <a class="metric" href="#beds"><span>Productive crop area</span><strong>596.6 m²</strong></a>
+        <a class="metric" href="#beds"><span>Total beds</span><strong>39</strong></a>
+        <a class="metric" href="#coop"><span>Chickens</span><strong>90</strong></a>
+      </div>
+      <div class="meta" style="margin-top:10px">Jeita · approximately 400 m elevation · 37 production beds + S8/S9 reserve/habitat (18 m²). Total property area is still TBC.</div>
+    </div>
+  </section>
+
+  <section id="farm" class="view">
+    <div class="section-title"><div><h2>Green Peas Farm Profile</h2><div class="sub">Confirmed farm facts and operating rules.</div></div><a class="btn" href="#home">Back</a></div>
+
+    <div class="grid4">
+      <div class="card metric"><span>Mapped net growing-bed area</span><strong>614.6 m²</strong></div>
+      <div class="card metric"><span>Planned productive crop area</span><strong>596.6 m²</strong></div>
+      <div class="card metric"><span>Production beds</span><strong>37</strong></div>
+      <div class="card metric"><span>Reserve / habitat</span><strong>18 m²</strong></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">Location & property</h3>
+        <div class="row"><div style="flex:1"><b>Location</b><div class="meta">Jeita, Lebanon · approximately 400 m elevation</div></div></div>
+        <div class="row"><div style="flex:1"><b>Total property area</b><div class="meta">TBC — paths, coop, café, nursery, composting, storage, trees and circulation are not yet mapped in the planting database.</div></div></div>
+        <div class="row"><div style="flex:1"><b>Infrastructure</b><div class="meta">Z1/Z2 greenhouses · Y1 and most remaining protected areas polytunnels · Y2, Z13, Z14 and S6 open field.</div></div></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Current production status</h3>
+        <div class="row"><div><b>Actual crop locations and planting dates</b><div class="meta">Not recorded yet</div></div></div>
+        <div class="row"><span>🌿</span><div><b>Existing crops mentioned in operations</b><div class="meta">Basil and tomatoes · exact bed/location still needs confirmation.</div></div></div>
+        <div class="row"><span>🗓️</span><div><b>Winter programme</b><div class="meta">Rocca, parsley, green onions, lettuce, beets, carrots, spinach, radish, cauliflower, broccoli, sprouting broccoli, peas, garlic, onions, fava beans, coriander, Swiss chard, dill and green garlic.</div></div></div>
+      </div>
+    </div>
+
+    <div class="card"><h3>Farm Areas / Facilities</h3><p>15 confirmed areas. Total property area: <b>TBC</b>.</p><a class="btn primary" href="#areas">Open Farm Areas</a></div>
+
+    <div class="card">
+      <div class="section-title"><h3>Irrigation by production area</h3><a class="btn" href="#beds">View beds</a></div>
+      <div class="tablewrap"><table><thead><tr><th>Environment</th><th>Areas</th><th>Working irrigation</th><th>Rule</th></tr></thead><tbody>
+        <tr><td>Greenhouse</td><td>Z1, Z2</td><td>Drip</td><td>Check root-zone moisture; protected crops receive little/no effective rainfall.</td></tr>
+        <tr><td>Polytunnel</td><td>Z7, Z8, Z9, Z10, Y1, S1–S5, S7</td><td>Drip</td><td>Separate control/valves where possible; inspect even during rainy periods.</td></tr>
+        <tr><td>Open field</td><td>Z13, Z14, Y2, S6</td><td>Drip</td><td>Adjust to actual soil moisture and weather rather than a fixed calendar.</td></tr>
+        <tr><td>Direct-seeded crops</td><td>As planted</td><td>Light clean-water irrigation during germination, then drip</td><td>Keep the seed zone evenly moist without waterlogging.</td></tr>
+        <tr><td>Reserve / habitat</td><td>S8, S9</td><td>Managed separately</td><td>Do not count automatically as productive crop capacity.</td></tr>
+      </tbody></table></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">Fertility / treatment protocol</h3>
+        <div class="notice" style="margin-bottom:10px"><b>Original farm protocol:</b> cow/chicken/possibly horse manure + compost + wood ash + roasted coffee shells, with compost at transplanting and a liquid mixture using compost tea, seaweed, humic acid, molasses/sugar, vermicompost and coffee material. The operating plan below refines that approach.</div>
+        <div class="row"><span>1</span><div><b>Test first</b><div class="meta">Soil and irrigation water testing before major fertility decisions.</div></div></div>
+        <div class="row"><span>2</span><div><b>Organic matter</b><div class="meta">Use verified mature/treated compost or manure-based compost at measured rates; correct compaction and drainage.</div></div></div>
+        <div class="row"><span>3</span><div><b>Coffee / ash</b><div class="meta">Co-compost coffee chaff. Do not routinely use wood ash unless soil analysis supports it.</div></div></div>
+        <div class="row"><span>4</span><div><b>Optional inputs</b><div class="meta">Seaweed and humic products only as measured optional inputs.</div></div></div>
+        <div class="row"><span>5</span><div><b>Food safety</b><div class="meta">Avoid routine homemade compost-tea/molasses foliar applications on raw-eaten crops.</div></div></div>
+        <div class="row"><span>6</span><div><b>Review timing</b><div class="meta">Fertility review around day 21; selected crops reviewed again around day 42.</div></div></div>
+        <div class="row"><span>7</span><div><b>Pest management</b><div class="meta">Scouting-based: observe, identify, record, then use an appropriate organic-compatible treatment only when justified.</div></div></div>
+        <div class="row"><span>8</span><div><b>Current treatment inventory names</b><div class="meta">Azaxol · Insectazol · Silazelle · Spinozad · Bt · Soap · Pepper · Neem oil. Product rate, crop approval, PHI/REI and expiry should be recorded from each label before use.</div></div></div>
+        <div class="row"><span>9</span><div><b>Current fertilizer / amendment inventory names</b><div class="meta">Vermi compost · Compost · Humic acid · Sugar · Seaweed · Beneficial bacteria · Weeds · Sheepwhool pellets · Wood Ash · Coffee eshre.</div></div></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Operating rhythm</h3>
+        <div class="row"><div><b>Daily</b><div class="meta">Harvest readiness · weather · soil moisture · irrigation · nursery/germination · pests/disease · food-safety checks · harvesting/cooling/packing · scheduled field work.</div></div></div>
+        <div class="row"><div><b>Monday</b><div class="meta">Crop scouting + 14-day outlook.</div></div></div>
+        <div class="row"><div><b>Tuesday</b><div class="meta">Crop/fertility review.</div></div></div>
+        <div class="row"><div><b>Wednesday</b><div class="meta">Weeding, drainage, traps/screens.</div></div></div>
+        <div class="row"><div><b>Thursday</b><div class="meta">Disease-risk review.</div></div></div>
+        <div class="row"><div><b>Friday</b><div class="meta">Detailed pest scouting + trellis/maintenance.</div></div></div>
+        <div class="row"><div><b>Saturday</b><div class="meta">Harvest/packing + record sales, café use and waste.</div></div></div>
+        <div class="row"><div><b>Sunday</b><div class="meta">Review demand versus the next 14 days of production.</div></div></div>
+        <div class="row"><div><b>Monthly</b><div class="meta">Inventory count · crop-performance review · egg/flock review · irrigation maintenance · tools/equipment · input costs · production vs sales.</div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><h3>Chicken baseline</h3><a class="btn" href="#coop">Open coop</a></div>
+      <div class="grid4">
+        <div class="clean"><div class="meta">Birds</div><div style="font-size:28px;font-weight:800">90</div></div>
+        <div class="clean"><div class="meta">Eggs collected</div><b>Not recorded yet</b></div>
+        <div class="clean"><div class="meta">Egg target</div><b>TBC</b></div>
+        <div class="clean"><div class="meta">Named coops</div><div style="font-size:28px;font-weight:800">2</div><div class="meta">Coop A + Coop B · <span class="birdSplit">bird split TBC</span></div></div>
+      </div>
+      <div class="meta" style="margin-top:10px">The app records Coop A and Coop B separately for every record: eggs collected, saleable, broken/dirty, sold, café use, remaining stock, feed, water, mortality, sickness/injury, medication/treatments, behaviour and notes. Total flock remains 90. <span class="birdSplit">Birds per coop: TBC.</span></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">Labour baseline & work scope</h3>
+        <div class="row"><div><b>Recurring paid farm labour baseline</b><div class="meta">1 regular farm worker in the current cost structure. This does not mean only one person ever works on the farm; management, founders, volunteers or temporary help may also participate.</div></div></div>
+        <div class="row"><div><b>General farm-worker scope</b><div class="meta">Irrigation operation and repairs · bed preparation · weeding · sowing · transplanting · harvesting · pruning · trellising · mulching · compost handling · cleaning beds · maintaining paths and drainage · general crop care and farm maintenance.</div></div></div>
+        <div class="row"><div><b>Recent work examples</b><div class="meta">Clearing beds · making tree basins · reinstalling irrigation · managing compost piles · pruning basil/tomatoes · drainage trenches · preparing beds for planting.</div></div></div>
+        <div class="row"><div><b>Chicken care</b><div class="meta">Responsibility should be explicitly assigned by coop/task rather than assumed.</div></div></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Recordkeeping & data model</h3>
+        <div class="row"><div><b>Current structured records</b><div class="meta">Excel / spreadsheets for beds, planting dates, harvest windows, nursery starts, fertility reviews and daily tasks.</div></div></div>
+        <div class="row"><div><b>Current gap</b><div class="meta">No single integrated database yet connecting crops, harvests, inventory, chickens, labour, sales and tasks.</div></div></div>
+        <div class="row"><div><b>Core operating chain</b><div class="meta">Bed → Crop → Task → Input → Harvest → Inventory → Sale.</div></div></div>
+        <div class="row"><div><b>Crop record states</b><div class="meta">Use Planned for intended crops, Active for physically planted/current crops, and Finished after harvest/clearing.</div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Core system priorities</h3>
+      <div class="grid2">
+        <div class="clean"><b>1. What is planted where and when</b><div class="meta">Exact bed, crop, planting date, harvest and replacement crop.</div></div>
+        <div class="clean"><b>2. Succession & nursery timing</b><div class="meta">Start the next tray/direct sowing before harvest gaps appear.</div></div>
+        <div class="clean"><b>3. Harvest, sales & waste</b><div class="meta">Track what was harvested, sold, used by the café, wasted or remains in stock.</div></div>
+        <div class="clean"><b>4. Inventory & procurement</b><div class="meta">Avoid running out of seeds, seedlings, compost, treatments, irrigation parts, feed, packaging and tools.</div></div>
+        <div class="clean"><b>5. Recurring duties</b><div class="meta">Every farm and chicken task needs a responsible person and due date.</div></div>
+      </div>
+    </div>
+  </section>
+
+<section id="areas" class="view"><div class="section-title"><div><h2>Farm Areas / Facilities</h2><p class="sub">Confirmed Green Peas area register</p></div><a class="btn" href="#home">Dashboard</a></div><div class="card"><b>Total property area: TBC</b><p>Facility dimensions, capacity, coordinates, layout and other details are TBC unless recorded. The farm has 90 chickens in total; <span class="birdSplit">the count in each coop is TBC.</span></p></div><div class="grid2"><div class="card facility"><h3>Ruin</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Cellar</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Chicken Coop A</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p><a class="btn" href="#coop" data-open-coop="Chicken Coop A">Open coop records</a></div><div class="card facility"><h3>Chicken Coop B</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p><a class="btn" href="#coop" data-open-coop="Chicken Coop B">Open coop records</a></div><div class="card facility"><h3>Toolshed</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Irrigation Station</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Marketplace / Breakfast Section</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Zone 5</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Compost System</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Sheep and Goat House</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Ferre House</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Ducks House</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Vehicle Shed</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Nursery</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div><div class="card facility"><h3>Storage</h3><div class="meta">Dimensions · capacity · coordinates · layout: TBC</div><p>Details: Not recorded yet</p></div></div><div class="card"><h3>Confirmed crop-production areas</h3><div class="tablewrap"><table><thead><tr><th>Area</th><th>Classification</th></tr></thead><tbody><tr><td>Z1</td><td>Greenhouse</td></tr><tr><td>Z2</td><td>Greenhouse</td></tr><tr><td>Z7</td><td>Polytunnel</td></tr><tr><td>Z8</td><td>Polytunnel</td></tr><tr><td>Z9</td><td>Polytunnel</td></tr><tr><td>Z10</td><td>Polytunnel</td></tr><tr><td>Z13</td><td>Open Field</td></tr><tr><td>Z14</td><td>Open Field</td></tr><tr><td>Y1</td><td>Polytunnel</td></tr><tr><td>Y2</td><td>Open Field</td></tr><tr><td>S1</td><td>Polytunnel</td></tr><tr><td>S2</td><td>Polytunnel</td></tr><tr><td>S3</td><td>Polytunnel</td></tr><tr><td>S4</td><td>Polytunnel</td></tr><tr><td>S5</td><td>Polytunnel</td></tr><tr><td>S6</td><td>Open Field</td></tr><tr><td>S7</td><td>Polytunnel</td></tr><tr><td>S8</td><td>Reserve / Habitat</td></tr><tr><td>S9</td><td>Reserve / Habitat</td></tr></tbody></table></div><p class="meta">S8 and S9 are Reserve / Habitat. Existing supplied bed measurements remain in the bed register; they do not establish the total property area.</p><a class="btn" href="#beds">View bed register</a></div></section>
+  <section id="beds" class="view">
+    <div class="card">
+      <div class="section-title"><div><h2>39-Bed Production Map</h2><div class="sub">Net productive bed dimensions, not gross structure footprint.</div></div><a class="btn" href="#farm">Farm profile</a></div>
+      <div class="tablewrap"><table><thead><tr><th>Area</th><th>Beds</th><th>Infrastructure</th><th>Net bed dimensions</th><th>Growing area</th></tr></thead><tbody>
+        <tr><td><b>Z1</b></td><td>Z1-B1 → Z1-B5</td><td>Greenhouse</td><td>23 × 0.8 m each</td><td>92.0 m²</td></tr>
+        <tr><td><b>Z2</b></td><td>Z2-B1 → Z2-B5</td><td>Greenhouse</td><td>28 × 0.8 m each</td><td>112.0 m²</td></tr>
+        <tr><td><b>Z7</b></td><td>Z7-B1, B2, B3</td><td>Polytunnel</td><td>20, 20, 10 × 0.8 m</td><td>40.0 m²</td></tr>
+        <tr><td><b>Z8</b></td><td>Z8-B1, B2</td><td>Polytunnel</td><td>16 × 0.8 m each</td><td>25.6 m²</td></tr>
+        <tr><td><b>Z9</b></td><td>Z9-B1, B2</td><td>Polytunnel</td><td>25 × 0.8 m each</td><td>40.0 m²</td></tr>
+        <tr><td><b>Z10</b></td><td>Z10-B1, B2</td><td>Polytunnel</td><td>35 × 0.8 m each</td><td>56.0 m²</td></tr>
+        <tr><td><b>Z13</b></td><td>Z13-B1 → B3</td><td>Open Field</td><td>30 × 0.8 m each</td><td>72.0 m²</td></tr>
+        <tr><td><b>Z14</b></td><td>Z14-B1 → B3</td><td>Open Field</td><td>15 × 0.8 m each</td><td>36.0 m²</td></tr>
+        <tr><td><b>Y1</b></td><td>Y1-B1 → B3</td><td>Polytunnel</td><td>15 × 0.8 m each</td><td>36.0 m²</td></tr>
+        <tr><td><b>Y2</b></td><td>Y2-B1, B2</td><td>Open Field</td><td>15 × 0.8 m each</td><td>24.0 m²</td></tr>
+        <tr><td><b>S</b></td><td>S1–S5</td><td>Polytunnel</td><td>6 × 1.5 m each</td><td>45.0 m²</td></tr>
+        <tr><td><b>S</b></td><td>S6</td><td>Open Field</td><td>6 × 1.5 m</td><td>9.0 m²</td></tr>
+        <tr><td><b>S</b></td><td>S7</td><td>Polytunnel</td><td>6 × 1.5 m</td><td>9.0 m²</td></tr><tr><td><b>S</b></td><td>S8, S9</td><td>Reserve / Habitat</td><td>6 × 1.5 m each</td><td>18.0 m²</td></tr>
+        <tr><td colspan="4"><b>TOTAL · 39 beds</b></td><td><b>614.6 m²</b></td></tr>
+      </tbody></table></div>
+      <div class="notice"><b>Production accounting:</b> 596.6 m² planned crop production. S8 + S9 = 18 m² reserve/habitat. Actual crop locations and planting dates: Not recorded yet.</div>
+    </div>
+  </section>
+
+  <section id="guide" class="view">
+    <div class="card">
+      <div class="section-title"><div><h2>Green Peas Crop Guide</h2><div class="sub">Working Jeita planting/harvest windows and current variety/type guidance.</div></div><a class="btn" href="#crops">Crop records</a></div>
+      <div class="tablewrap"><table><thead><tr><th>Crop</th><th>Variety / type</th><th>Main planting window</th><th>Main harvest window</th></tr></thead><tbody>
+        <tr><td>Rocca</td><td>Salad rocket · fast-growing · bolt-tolerant</td><td>Sep–Mar</td><td>Oct–Apr/May</td></tr>
+        <tr><td>Lettuce</td><td>Red + green oakleaf · frilly · small romaine mix</td><td>Sep–Apr</td><td>Oct–May</td></tr>
+        <tr><td>Spinach</td><td>Winter type with locally relevant downy-mildew resistance</td><td>Sep–Feb</td><td>Oct–Apr</td></tr>
+        <tr><td>Parsley</td><td>Flat-leaf parsley</td><td>Aug–Feb</td><td>Oct–spring · repeated cuts</td></tr>
+        <tr><td>Coriander</td><td>Leaf coriander · bolt-tolerant</td><td>Sep–Feb</td><td>Oct–Mar</td></tr>
+        <tr><td>Dill</td><td>Leaf dill</td><td>Sep–Feb</td><td>Oct–Mar</td></tr>
+        <tr><td>Radish</td><td>Round red + French Breakfast</td><td>Sep–Mar</td><td>Oct–Apr</td></tr>
+        <tr><td>Carrot</td><td>Short Nantes / Chantenay type</td><td>Sep–Feb</td><td>Dec–May</td></tr>
+        <tr><td>Beet</td><td>Round early beet</td><td>Sep–Feb</td><td>Nov–Apr</td></tr>
+        <tr><td>Green onion</td><td>True bunching onion / locally proven scallion</td><td>Sep–Feb</td><td>Nov–Apr</td></tr>
+        <tr><td>Swiss chard</td><td>Leaf-harvest type</td><td>Sep–Mar</td><td>Oct onward</td></tr>
+        <tr><td>Broccoli</td><td>Heading broccoli</td><td>Sep–Nov</td><td>Nov–Feb</td></tr>
+        <tr><td>Cauliflower</td><td>Locally adapted autumn/winter · early/medium/late slots</td><td>Sep–Nov</td><td>Nov–Feb</td></tr>
+        <tr><td>Sprouting broccoli</td><td>Short-cycle green / broccolini type</td><td>Sep–Nov</td><td>Nov–Mar</td></tr>
+        <tr><td>Peas</td><td>Early edible-pod / snap pea</td><td>Oct–Jan</td><td>Jan–Apr</td></tr>
+        <tr><td>Fava beans</td><td>Early autumn-sown local type</td><td>Oct–Jan</td><td>Jan–Apr</td></tr>
+        <tr><td>Garlic</td><td>Healthy local planting stock</td><td>Autumn</td><td>Green garlic winter/spring · bulbs May–Jun</td></tr>
+        <tr><td>Green garlic</td><td>Local garlic planted densely and harvested young</td><td>Autumn/winter</td><td>Winter–spring</td></tr>
+        <tr><td>Bulb onion</td><td>Locally proven short/intermediate-day type</td><td>Autumn/winter</td><td>Spring–early summer</td></tr>
+        <tr><td>Tomato</td><td>Cultivar TBC</td><td>Nursery Feb–Mar · transplant Mar–Apr</td><td>May–Oct</td></tr>
+        <tr><td>Eggplant</td><td>Cultivar TBC</td><td>Nursery Feb–Mar · transplant Mar–Apr</td><td>May–Oct</td></tr>
+        <tr><td>Bell pepper</td><td>Cultivar TBC</td><td>Nursery Feb–Mar · transplant Mar–Apr</td><td>May–Oct</td></tr>
+        <tr><td>Cucumber</td><td>Cultivar TBC</td><td>Mar onward</td><td>Apr/May–Oct</td></tr>
+        <tr><td>Zucchini</td><td>Cultivar TBC</td><td>Mar onward</td><td>Apr/May–Oct</td></tr>
+        <tr><td>Beans</td><td>Bush / green bean</td><td>Spring–summer succession</td><td>May–Oct</td></tr>
+        <tr><td>Basil</td><td>Cultivar TBC</td><td>Spring establishment</td><td>Apr/May–Oct</td></tr>
+        <tr><td>Pumpkin</td><td>Cultivar TBC</td><td>Spring</td><td>Summer–autumn</td></tr>
+      </tbody></table></div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="clean"><b>Cool season</b><div class="meta">Rocca, lettuce, spinach, parsley, coriander, dill, Swiss chard, radish, carrots, beetroot, green onions, onions, garlic, green garlic, broccoli, sprouting broccoli, cauliflower, pak choi, mustard greens, cabbage, peas and fava beans.</div></div>
+        <div class="clean"><b>Warm season</b><div class="meta">Tomato, eggplant, bell pepper, cucumber, zucchini, bush/green beans, basil and pumpkin. Selected herbs/greens continue where protected conditions allow.</div></div>
+      </div>
+      <div class="notice"><b>Important:</b> these are working Jeita windows, not fixed dates. Successive sowings are used to maintain continuous harvest. Cold, shade and rainfall can slow winter maturity. Actual seed company, cultivar and lot number should be added when confirmed.</div>
+    </div>
+  </section>
+
+  <section id="tasks" class="view">
+    <div class="card">
+      <div class="section-title"><div><h2>Tasks</h2><div class="sub">Assign and complete farm work.</div></div><a class="btn" href="#home">Back</a></div>
+      <form id="taskForm" class="form">
+        <input id="taskTitle" required placeholder="New task">
+        <select id="taskOwner">
+          <option value="Haidar">Haidar</option>
+          <option value="Soufe">Soufe</option>
+          <option value="Fady">Fady</option>
+          <option value="Koussai">Koussai</option>
+          <option value="Omran">Omran</option>
+          <option value="Yamen">Yamen</option>
+          <option value="Amjat">Amjat</option>
+          <option value="Hsein">Hsein</option>
+          <option value="Jassem">Jassem</option>
+          <option value="Chris">Chris</option>
+        </select>
+        <input id="taskTime" type="time" >
+        <button class="btn primary" type="submit">Add task</button>
+      </form>
+      <div id="taskList"></div>
+    </div>
+  </section>
+
+  <section id="crops" class="view">
+    <div class="card">
+      <div class="section-title"><div><h2>Crops</h2><div class="sub">Choose the exact Green Peas bed from the list—no typing. Keep Planned separate from physically planted/current crops. Use Active once the crop is actually in the bed.</div></div><a class="btn" href="#home">Back</a></div>
+      <form id="cropForm" class="form five">
+        <input id="cropName" required placeholder="Crop">
+        <select id="cropLocation" required>
+          <option value="">Choose bed</option>
+          <optgroup label="Z1 · Greenhouse">
+            <option>Z1-B1</option><option>Z1-B2</option><option>Z1-B3</option><option>Z1-B4</option><option>Z1-B5</option>
+          </optgroup>
+          <optgroup label="Z2 · Greenhouse">
+            <option>Z2-B1</option><option>Z2-B2</option><option>Z2-B3</option><option>Z2-B4</option><option>Z2-B5</option>
+          </optgroup>
+          <optgroup label="Z7 · Polytunnel">
+            <option>Z7-B1</option><option>Z7-B2</option><option>Z7-B3</option>
+          </optgroup>
+          <optgroup label="Z8 · Polytunnel">
+            <option>Z8-B1</option><option>Z8-B2</option>
+          </optgroup>
+          <optgroup label="Z9 · Polytunnel">
+            <option>Z9-B1</option><option>Z9-B2</option>
+          </optgroup>
+          <optgroup label="Z10 · Polytunnel">
+            <option>Z10-B1</option><option>Z10-B2</option>
+          </optgroup>
+          <optgroup label="Z13 · Open Field">
+            <option>Z13-B1</option><option>Z13-B2</option><option>Z13-B3</option>
+          </optgroup>
+          <optgroup label="Z14 · Open Field">
+            <option>Z14-B1</option><option>Z14-B2</option><option>Z14-B3</option>
+          </optgroup>
+          <optgroup label="Y1 · Polytunnel">
+            <option>Y1-B1</option><option>Y1-B2</option><option>Y1-B3</option>
+          </optgroup>
+          <optgroup label="Y2 · Open Field">
+            <option>Y2-B1</option><option>Y2-B2</option>
+          </optgroup>
+          <optgroup label="S · Polytunnel / Open Field">
+            <option>S1</option><option>S2</option><option>S3</option><option>S4</option><option>S5</option>
+            <option>S6</option><option>S7</option>
+            <option disabled>S8 · Reserve / Habitat</option>
+            <option disabled>S9 · Reserve / Habitat</option>
+          </optgroup>
+        </select>
+        <input id="cropDate" type="date" aria-label="Planting date (optional)">
+        <select id="cropStage"><option>Planned</option><option>Active</option><option>Vegetative</option><option>Flowering</option><option>Fruit development</option><option>Ready to harvest</option><option>Finished</option></select>
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+      <div class="tablewrap"><table><thead><tr><th>Crop</th><th>Bed</th><th>Planted</th><th>Stage</th><th>Action</th></tr></thead><tbody id="cropRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="coop" class="view"><div class="section-title"><div><h2>Chicken coops</h2><p class="sub">90 chickens across the farm · <span class="birdSplit">individual coop counts TBC until entered</span></p></div><a class="btn" href="#areas">Farm Areas</a></div>
+<div class="card"><h3>Bird counts</h3><form id="birdForm"><div class="grid2"><label>Chicken Coop A<input id="birdsA" type="number" min="0" max="90" step="1" placeholder="TBC"></label><label>Chicken Coop B<input id="birdsB" type="number" min="0" max="90" step="1" placeholder="TBC"></label></div><p class="meta">Enter observed counts only. The other coop is never filled automatically. If both counts are entered, they must total 90.</p><button class="btn" type="submit">Save observed counts</button></form></div>
+<div class="card"><div class="grid2"><label>Coop<select id="activeCoop"><option>Chicken Coop A</option><option>Chicken Coop B</option></select></label><label>Record date<input id="recordDate" type="date" required></label></div><p class="meta">One daily record per coop and date. Selecting another coop or date loads its own saved values. Blank means Not recorded yet; enter 0 only when observed.</p><p id="recordStatus" role="status"></p></div>
+<form id="dailyRecordForm"><div class="card"><h3>Egg collection & stock</h3><div id="eggFields" class="record-grid"></div><p class="meta">When both collection rounds are recorded, eggs collected is their sum. Saleable + broken / dirty must match the collection when all three are entered. Remaining stock is an observed count; it is not inferred from missing opening stock.</p></div><div class="card"><h3>Feed, water & flock health</h3><div id="healthFields" class="record-grid"></div></div><div class="card"><h3>Responsibility & notes</h3><div id="noteFields" class="grid2"></div><p><button class="btn primary" type="submit">Save daily coop record</button></p></div></form>
+<div class="card"><h3>Cleaning schedule</h3><p class="meta">Daily mini cleaning · weekly normal cleaning · monthly deep cleaning. Due dates start from actual recorded cleaning or an entered next due date.</p><div id="cleanCards" class="clean-grid"></div></div>
+<div class="card"><h3>Record cleaning</h3><form id="cleanForm"><div class="record-grid"><label>Cleaning type<select id="cleanType"><option value="mini">Daily mini cleaning</option><option value="normal">Weekly normal cleaning</option><option value="deep">Monthly deep cleaning</option></select></label><label>Cleaning date<input id="cleanDate" type="date" required></label><label>Worker responsible<input id="cleanWorker" placeholder="Not recorded yet"></label><label>Completion<select id="cleanCompletion" required><option value="">Choose completion</option><option>Completed</option><option>Partial</option><option>Not completed</option></select></label><label>Next cleaning due<input id="cleanNext" type="date"></label><label>Cleaning notes<textarea id="cleanNotes" placeholder="Not recorded yet"></textarea></label></div><p class="meta">For completed cleaning, leaving next due blank schedules one day, one week or one calendar month after the cleaning date.</p><button class="btn primary" type="submit">Save cleaning record</button></form></div>
+<div class="card"><h3>Cleaning history · <span id="historyCoop"></span></h3><div id="cleanHistory"></div></div><div class="card"><h3>Daily history · <span id="dailyHistoryCoop"></span></h3><div id="dailyHistory"></div></div></section>
+
+  <section id="eggs" class="view"><div class="section-title"><div><h2>Farm egg dashboard</h2><p class="sub">Totals calculated from separate Chicken Coop A and Chicken Coop B records</p></div><a class="btn primary" href="#coop">Enter coop records</a></div><div class="card"><label>Summary date<input id="summaryDate" type="date" required></label><p class="meta">A farm total is shown only when both coops have recorded that field. Partial subtotals identify missing records.</p><div id="eggSummary" class="record-grid"></div></div><div class="card"><h3>Records by coop</h3><div id="eggHistory"></div></div></section>
+
+  <section id="workers" class="view">
+    <div class="card">
+      <div class="section-title"><div><h2>Workers</h2><div class="sub">People and responsibilities.</div></div><a class="btn" href="#home">Back</a></div>
+      <form id="workerForm" class="form">
+        <input id="workerName" required placeholder="Worker name">
+        <input id="workerRole" required placeholder="Responsibility">
+        <input id="workerPhone" placeholder="Phone (optional)">
+        <button class="btn primary" type="submit">Add worker</button>
+      </form>
+      <div id="workerList"></div>
+    </div>
+  </section>
+
+  <section id="inventory" class="view">
+    <div class="card">
+      <div class="section-title"><div><h2>Inventory</h2><div class="sub">Seeds, feed, treatments, fertilizers/amendments, irrigation parts, packaging, tools and farm supplies.</div></div><a class="btn" href="#home">Back</a></div>
+      <form id="invForm" class="form five">
+        <input id="invItem" required placeholder="Item">
+        <select id="invCategory"><option>Feed</option><option>Seeds</option><option>Seedlings</option><option>Treatment</option><option>Fertilizer / amendment</option><option>Irrigation</option><option>Nursery</option><option>Chicken bedding</option><option>Cleaning</option><option>Packaging</option><option>Tools / PPE</option><option>Other</option></select>
+        <input id="invQty" type="number" min="0" step="0.1" required placeholder="Quantity">
+        <input id="invMin" type="number" min="0" step="0.1" required placeholder="Minimum">
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+      <div class="tablewrap"><table><thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Min</th><th>Status</th><th>Adjust</th></tr></thead><tbody id="invRows"></tbody></table></div>
+      <div class="notice"><b>Next inventory fields:</b> unit, supplier, purchase price, purchase date, expiry date (where applicable) and usage history. Quantities/minimums remain TBC until a physical count is entered.</div>
+    </div>
+  </section>
+
+  <section id="planting" class="view">
+    <div class="card">
+      <div class="section-title"><div><h2>Planting Plan</h2><div class="sub">Schedule future planting.</div></div><a class="btn" href="#home">Back</a></div>
+      <form id="planForm" class="form five">
+        <input id="planCrop" required placeholder="Crop">
+        <input id="planArea" required placeholder="Field / bed">
+        <input id="planDate" type="date" required>
+        <input id="planNotes" placeholder="Notes">
+        <button class="btn primary" type="submit">Schedule</button>
+      </form>
+      <div id="planList"></div>
+    </div>
+  </section>
+</div>
+
+<nav class="bottom">
+  <a href="#areas"><b>🏡</b>Areas</a>
+  <a href="#tasks"><b>✅</b>Tasks</a>
+  <a href="#crops"><b>🌱</b>Crops</a>
+  <a href="#coop"><b>🐔</b>Coop</a>
+  <a href="#farm"><b>•••</b>More</a>
+</nav>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const display = value => value === null || value === undefined || value === '' ? 'Not recorded yet' : escape(value);
+  const dateKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const today = () => dateKey(new Date());
+  const dateObject = s => new Date(s+'T12:00:00');
+  const fmt = s => s ? dateObject(s).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : 'TBC';
+  const COOPS = ['Chicken Coop A','Chicken Coop B'];
+  const CLEAN = {mini:'Daily mini cleaning',normal:'Weekly normal cleaning',deep:'Monthly deep cleaning'};
+  const STORE = 'green_peas_confirmed_v4';
+  const defaults = {version:4,workers:[
+      {name:'Haidar',role:'Farm operations',phone:''},
+      {name:'Soufe',role:'Farm operations',phone:''},
+      {name:'Fady',role:'Farm operations',phone:''},
+      {name:'Koussai',role:'Farm operations',phone:''},
+      {name:'Omran',role:'Farm operations',phone:''},
+      {name:'Yamen',role:'Farm operations',phone:''},
+      {name:'Amjat',role:'Farm operations',phone:''},
+      {name:'Hsein',role:'Farm operations',phone:''},
+      {name:'Jassem',role:'Farm operations',phone:''},
+      {name:'Chris',role:'Farm operations',phone:''}
+    ],tasks:[],crops:[],inventory:[
+      {item:'Chicken feed',category:'Feed',qty:null,min:null},
+      {item:'Seeds / seed lots',category:'Seeds',qty:null,min:null},
+      {item:'Seedlings / transplants',category:'Seedlings',qty:null,min:null},
+      {item:'Chicken bedding',category:'Chicken bedding',qty:null,min:null},
+      {item:'Mulch',category:'Other',qty:null,min:null},
+      {item:'Nursery trays / media',category:'Nursery',qty:null,min:null},
+      {item:'Drip line / emitters / connectors / valves',category:'Irrigation',qty:null,min:null},
+      {item:'Trellis material',category:'Other',qty:null,min:null},
+      {item:'Packaging / egg packaging',category:'Packaging',qty:null,min:null},
+      {item:'Harvest crates',category:'Other',qty:null,min:null},
+      {item:'Cleaning / sanitation materials',category:'Cleaning',qty:null,min:null},
+      {item:'PPE / hand tools / replacement parts',category:'Tools / PPE',qty:null,min:null},
+      {item:'Azaxol',category:'Treatment',qty:null,min:null},
+      {item:'Insectazol',category:'Treatment',qty:null,min:null},
+      {item:'Silazelle',category:'Treatment',qty:null,min:null},
+      {item:'Spinozad',category:'Treatment',qty:null,min:null},
+      {item:'Bt',category:'Treatment',qty:null,min:null},
+      {item:'Soap',category:'Treatment',qty:null,min:null},
+      {item:'Pepper',category:'Treatment',qty:null,min:null},
+      {item:'Neem oil',category:'Treatment',qty:null,min:null},
+      {item:'Vermi compost',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Compost',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Humic acid',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Sugar',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Seaweed',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Beneficial bacteria',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Weeds',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Sheepwhool pellets',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Wood Ash',category:'Fertilizer / amendment',qty:null,min:null},
+      {item:'Coffee eshre',category:'Fertilizer / amendment',qty:null,min:null}
+    ],plans:[],birds:{},records:{},cleaning:[]};
+  let state = structuredClone(defaults);
+  let storageBlocked = false;
+  function notice(message) { $('storageNotice').hidden=false; $('storageNotice').textContent=message; }
+  try {
+    const saved=localStorage.getItem(STORE);
+    if(saved){const data=JSON.parse(saved);if(data.version!==4 || !data.records || !Array.isArray(data.cleaning))throw Error('Invalid saved data');state={...state,...data};}
+    else if(localStorage.getItem('green_peas_farm_os_complete_v3')) notice('Earlier app data is preserved in this browser. This version starts with verified records only; old entries have not been assigned to coops or treated as confirmed. Keep the original file to review earlier entries.');
+  } catch(e) { storageBlocked=true; notice('Saved data could not be read. Existing storage is preserved; changes cannot be saved until browser storage is available.'); }
+  function toast(message) { $('toast').textContent=message; $('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),3500); }
+  function commit(next) {
+    if(storageBlocked){toast('Not saved. Browser storage is unavailable.');return false;}
+    try {localStorage.setItem(STORE,JSON.stringify(next));state=next;return true;}
+    catch(e){notice('Not saved: browser storage is unavailable or full. Keep this page open and try again.');return false;}
+  }
+  function change(fn) {const next=structuredClone(state);fn(next);return commit(next);}
+  const eggFields=[['morning','Morning eggs'],['evening','Evening eggs'],['total','Eggs collected'],['saleable','Saleable eggs'],['broken','Broken / dirty eggs'],['cafe','Café use'],['sold','Eggs sold'],['stock','Remaining egg stock']];
+  const healthFields=[['feed','Feed used (kg)'],['water','Water check','select'],['sick','Sick / injured birds'],['mortality','Mortality'],['treatment','Treatments / medication','text'],['behaviour','Unusual behaviour','text']];
+  const noteFields=[['worker','Worker responsible','text'],['notes','Notes','text']];
+  const fields=[...eggFields,...healthFields,...noteFields];
+  const numeric=fields.filter(f=>!f[2]).map(f=>f[0]);
+  function fieldMarkup([id,label,type]) {
+    const control=type==='text'?`<textarea id="rec_${id}" placeholder="Not recorded yet"></textarea>`:type==='select'?`<select id="rec_${id}"><option value="">Not recorded yet</option><option>Checked — OK</option><option>Checked — issue found</option><option>Not checked</option></select>`:`<input id="rec_${id}" type="number" min="0" step="${id==='feed'?'any':'1'}" placeholder="Not recorded yet">`;
+    return `<label>${label}${control}</label>`;
+  }
+  $('eggFields').innerHTML=eggFields.map(fieldMarkup).join('');
+  $('healthFields').innerHTML=healthFields.map(fieldMarkup).join('');
+  $('noteFields').innerHTML=noteFields.map(fieldMarkup).join('');
+  $('recordDate').value=today();$('cleanDate').value=today();$('summaryDate').value=today();
+  $('todayLabel').textContent=fmt(today());
+  const record = (date,coop) => state.records[date]?.[coop];
+  const currentCoop = () => $('activeCoop').value;
+  const numberValue = id => $(id).value==='' ? null : Number($(id).value);
+  function combined(date,field) {
+    const values=COOPS.map(coop=>record(date,coop)?.[field]);
+    const entered=values.filter(v=>typeof v==='number');
+    if(!entered.length)return 'Not recorded yet';
+    const total=entered.reduce((a,b)=>a+b,0);
+    return entered.length===2?String(total):`${total} recorded · partial; ${values[0]==null?'Coop A':'Coop B'}: Not recorded yet`;
+  }
+  function describe(rec) {return '<dl class="record-grid">'+fields.map(([field,label])=>`<div><dt>${label}</dt><dd>${display(rec[field])}</dd></div>`).join('')+'</dl>';}
+  function loadRecord() {
+    const rec=record($('recordDate').value,currentCoop());
+    fields.forEach(([field])=>{$('rec_'+field).value=rec?.[field]??'';});
+    $('recordStatus').textContent=rec?'Saved record loaded. Saving updates this coop and date.':'Not recorded yet';
+    $('cleanForm').reset();$('cleanDate').value=$('recordDate').value;
+    renderCleaning();renderDailyHistory();
+  }
+  function renderDailyHistory() {
+    $('dailyHistoryCoop').textContent=currentCoop();
+    const dates=Object.keys(state.records).filter(date=>record(date,currentCoop())).sort().reverse();
+    $('dailyHistory').innerHTML=dates.length?dates.map(date=>`<details><summary>${fmt(date)} · ${display(record(date,currentCoop()).total)} eggs collected</summary>${describe(record(date,currentCoop()))}<button type="button" class="btn" data-edit-date="${date}">Edit this record</button></details>`).join(''):'<p class="meta">Not recorded yet</p>';
+  }
+  function latestCleaning(coop,type) {return state.cleaning.filter(r=>r.coop===coop&&r.type===type).sort((a,b)=>b.date.localeCompare(a.date)||b.savedAt.localeCompare(a.savedAt))[0];}
+  function cleaningStatus(rec) {return !rec?'Not recorded yet':!rec.next?'Next due: TBC':rec.next<=today()?'Due':'Next due: '+fmt(rec.next);}
+  function renderCleaning() {
+    $('historyCoop').textContent=currentCoop();
+    $('cleanCards').innerHTML=Object.entries(CLEAN).map(([type,name])=>{const rec=latestCleaning(currentCoop(),type);return `<div class="clean"><b>${name}</b><p class="status">${cleaningStatus(rec)}</p><dl><dt>Completion</dt><dd>${display(rec?.completion)}</dd><dt>Cleaning date</dt><dd>${rec?fmt(rec.date):'Not recorded yet'}</dd><dt>Worker responsible</dt><dd>${display(rec?.worker)}</dd><dt>Next cleaning due</dt><dd>${rec?.next?fmt(rec.next):'TBC'}</dd></dl></div>`;}).join('');
+    const history=state.cleaning.filter(r=>r.coop===currentCoop()).sort((a,b)=>b.date.localeCompare(a.date)||b.savedAt.localeCompare(a.savedAt));
+    $('cleanHistory').innerHTML=history.length?history.map(r=>`<details><summary>${fmt(r.date)} · ${CLEAN[r.type]} · ${escape(r.completion)}</summary><dl><dt>Worker responsible</dt><dd>${display(r.worker)}</dd><dt>Next cleaning due</dt><dd>${fmt(r.next)}</dd><dt>Notes</dt><dd>${display(r.notes)}</dd></dl></details>`).join(''):'<p class="meta">Not recorded yet</p>';
+    let known=0,due=0;
+    $('homeCleaning').innerHTML=COOPS.map(coop=>{let count=0,missing=0;Object.keys(CLEAN).forEach(type=>{const rec=latestCleaning(coop,type);if(rec?.next){known++;if(rec.next<=today()){count++;due++;}}else missing++;});return `<div class="row"><div><b>${coop}</b><div class="meta">${count} recorded due · ${missing?missing+' schedules TBC':'All schedules recorded'}</div></div></div>`;}).join('');
+    $('kpiClean').textContent=known===0?'TBC':known<6?`${due} · partial`:due;
+  }
+  function renderEggs() {
+    $('kpiEggs').textContent=combined(today(),'total');
+    $('eggSummary').innerHTML=eggFields.map(([field,label])=>`<div class="clean"><div class="meta">${label}</div><p><b>${combined($('summaryDate').value,field)}</b></p></div>`).join('');
+    const date=$('summaryDate').value;
+    $('eggHistory').innerHTML=COOPS.map(coop=>`<details open><summary>${coop} · ${fmt(date)}</summary>${record(date,coop)?describe(record(date,coop)):'<p>Not recorded yet</p>'}</details>`).join('');
+  }
+  function renderBirds() { document.querySelectorAll('.birdSplit').forEach(el=>{el.textContent=COOPS.map(coop=>coop+': '+(state.birds[coop]??'TBC')).join(' · ');}); }
+  $('birdForm').addEventListener('submit',e=>{
+    e.preventDefault();const a=numberValue('birdsA'),b=numberValue('birdsB');
+    if([a,b].some(n=>n!==null&&(!Number.isInteger(n)||n<0||n>90))||(a!==null&&b!==null&&a+b!==90)){toast('Observed counts must be whole numbers; both coops must total 90.');return;}
+    if(change(s=>{s.birds={[COOPS[0]]:a,[COOPS[1]]:b};})){renderBirds();toast('Observed counts saved');}
+  });
+  $('birdsA').value=state.birds[COOPS[0]]??'';$('birdsB').value=state.birds[COOPS[1]]??'';
+  $('dailyRecordForm').addEventListener('submit',e=>{
+    e.preventDefault();const date=$('recordDate').value,coop=currentCoop();
+    if(!date||date>today()){toast('Choose an actual record date, today or earlier.');return;}
+    const rec=Object.fromEntries(fields.map(([field,type])=>[field,numeric.includes(field)?numberValue('rec_'+field):$('rec_'+field).value.trim()||null]));
+    if(numeric.some(field=>rec[field]!==null&&(!Number.isFinite(rec[field])||rec[field]<0||(field!=='feed'&&!Number.isInteger(rec[field]))))){toast('Enter non-negative quantities and whole egg / bird counts.');return;}
+    if(rec.morning!==null&&rec.evening!==null){const total=rec.morning+rec.evening;if(rec.total!==null&&rec.total!==total){toast('Eggs collected must equal morning plus evening eggs.');return;}rec.total=total;}
+    if(rec.total!==null&&((rec.morning??0)+(rec.evening??0)>rec.total||(rec.saleable??0)+(rec.broken??0)>rec.total)){toast('Collection or grading counts exceed eggs collected.');return;}
+    if(rec.total!==null&&rec.saleable!==null&&rec.broken!==null&&rec.saleable+rec.broken!==rec.total){toast('Saleable plus broken / dirty eggs must equal eggs collected.');return;}
+    if(fields.every(([field])=>rec[field]===null)){toast('Enter at least one observation before saving.');return;}
+    if(change(s=>{s.records[date]??={};s.records[date][coop]=rec;})){loadRecord();renderEggs();toast(coop+' daily record saved');}
+  });
+  function nextDate(date,type){const d=dateObject(date);if(type==='deep'){const day=d.getDate();d.setMonth(d.getMonth()+1,1);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));}else d.setDate(d.getDate()+(type==='mini'?1:7));return dateKey(d);}
+  $('cleanForm').addEventListener('submit',e=>{
+    e.preventDefault();const type=$('cleanType').value,date=$('cleanDate').value,completion=$('cleanCompletion').value;
+    if(!date||date>today()||!completion){toast('Enter a cleaning date today or earlier and completion status.');return;}
+    const next=$('cleanNext').value||(completion==='Completed'?nextDate(date,type):null);
+    if(next&&next<date){toast('Next cleaning due cannot be before the cleaning date.');return;}
+    const rec={coop:currentCoop(),type,date,completion,next,worker:$('cleanWorker').value.trim()||null,notes:$('cleanNotes').value.trim()||null,savedAt:new Date().toISOString()};
+    if(change(s=>s.cleaning.push(rec))){$('cleanForm').reset();$('cleanDate').value=$('recordDate').value;renderCleaning();toast('Cleaning record saved for '+rec.coop);}
+  });
+  $('activeCoop').addEventListener('change',loadRecord);$('recordDate').addEventListener('change',loadRecord);$('summaryDate').addEventListener('change',renderEggs);
+  function renderOther() {
+    const empty='<p class="meta">Not recorded yet</p>';
+    const selected=$('taskOwner').value;
+    $('taskOwner').innerHTML='<option value="">Worker TBC</option>'+state.workers.map(w=>`<option>${escape(w.name)}</option>`).join('');$('taskOwner').value=selected;
+    $('workerList').innerHTML=state.workers.map((w,i)=>`<div class="row"><div style="flex:1"><b>${escape(w.name)}</b><div class="meta">${display(w.role)} ${escape(w.phone)}</div></div><button class="btn danger" data-del-worker="${i}">Remove</button></div>`).join('')||empty;
+    const taskMarkup=(t,i,controls)=>`<div class="row">${controls?`<input type="checkbox" aria-label="Complete ${escape(t.title)}" data-check="${i}" ${t.done?'checked':''} style="width:20px">`:''}<div style="flex:1"><b>${escape(t.title)}</b><div class="meta">${display(t.owner)} · ${display(t.time)} · ${t.done?'Completed':'Open'}</div></div>${controls?`<button class="btn danger" data-del-task="${i}">Remove</button>`:''}</div>`;
+    $('taskList').innerHTML=state.tasks.map((t,i)=>taskMarkup(t,i,true)).join('')||empty;$('homeTasks').innerHTML=state.tasks.slice(0,5).map((t,i)=>taskMarkup(t,i,false)).join('')||empty;
+    $('kpiTasks').textContent=state.tasks.length?state.tasks.filter(t=>!t.done).length:'Not recorded yet';
+    $('cropRows').innerHTML=state.crops.map((c,i)=>`<tr><td>${escape(c.name)}</td><td>${escape(c.location)}</td><td>${fmt(c.planted)}</td><td>${escape(c.stage)}</td><td><button class="btn" data-advance="${i}">Advance</button></td></tr>`).join('')||'<tr><td colspan="5">Not recorded yet</td></tr>';
+    $('homeCrops').innerHTML=state.crops.slice(0,4).map(c=>`<div class="clean"><b>${escape(c.name)}</b><p>${escape(c.location)} · ${escape(c.stage)}</p></div>`).join('')||empty;
+    $('kpiCrops').textContent=state.crops.length?state.crops.filter(c=>!['Planned','Finished'].includes(c.stage)).length:'Not recorded yet';
+    $('invRows').innerHTML=state.inventory.map((x,i)=>`<tr><td>${escape(x.item)}</td><td>${escape(x.category)}</td><td>${x.qty??'TBC'}</td><td>${x.min??'TBC'}</td><td>${x.qty==null||x.min==null?'TBC':x.qty<x.min?'Low':'OK'}</td><td><button class="btn" data-count="${i}">Record count</button> <button class="btn" data-minus="${i}" ${x.qty==null?'disabled':''}>−</button> <button class="btn" data-plus="${i}" ${x.qty==null?'disabled':''}>+</button></td></tr>`).join('');
+    $('planList').innerHTML=state.plans.map((p,i)=>`<div class="row"><div style="flex:1"><b>${escape(p.crop)} · ${escape(p.area)}</b><p class="meta">${fmt(p.date)} · ${display(p.notes)}</p></div><button class="btn danger" data-del-plan="${i}">Remove</button></div>`).join('')||empty;
+  }
+  document.addEventListener('click',e=>{
+    const link=e.target.closest('[data-open-coop]');if(link){$('activeCoop').value=link.dataset.openCoop;loadRecord();}
+    const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.editDate){$('recordDate').value=b.dataset.editDate;loadRecord();$('recordDate').scrollIntoView({behavior:'smooth'});return;}
+    for(const [attr,list] of [['delWorker','workers'],['delTask','tasks'],['delPlan','plans']])if(b.dataset[attr]!==undefined){if(change(s=>s[list].splice(Number(b.dataset[attr]),1)))renderOther();return;}
+    if(b.dataset.advance!==undefined){const stages=['Planned','Active','Vegetative','Flowering','Fruit development','Ready to harvest','Finished'];if(change(s=>{const c=s.crops[+b.dataset.advance];c.stage=stages[Math.min(stages.length-1,stages.indexOf(c.stage)+1)];}))renderOther();}
+    if(b.dataset.count!==undefined){const i=+b.dataset.count,input=prompt('Enter the observed inventory quantity. Leave blank to keep TBC.',state.inventory[i].qty??'');if(input===null||input.trim()==='')return;const qty=Number(input);if(!Number.isFinite(qty)||qty<0){toast('Enter a non-negative quantity');return;}if(change(s=>s.inventory[i].qty=qty))renderOther();}
+    for(const action of ['minus','plus'])if(b.dataset[action]!==undefined){const i=+b.dataset[action];if(state.inventory[i].qty==null)return;if(change(s=>s.inventory[i].qty=Math.max(0,Math.round((s.inventory[i].qty+(action==='plus'?1:-1))*100)/100)))renderOther();}
+  });
+  document.addEventListener('change',e=>{if(e.target.dataset.check!==undefined&&change(s=>s.tasks[+e.target.dataset.check].done=e.target.checked))renderOther();});
+  function submit(id,fn){$(id).addEventListener('submit',e=>{e.preventDefault();if(change(fn)){e.target.reset();renderOther();toast('Saved');}});}
+  submit('taskForm',s=>s.tasks.push({title:$('taskTitle').value.trim(),owner:$('taskOwner').value||null,time:$('taskTime').value||null,done:false}));
+  submit('cropForm',s=>s.crops.push({name:$('cropName').value.trim(),location:$('cropLocation').value,planted:$('cropDate').value||null,stage:$('cropStage').value}));
+  submit('workerForm',s=>s.workers.push({name:$('workerName').value.trim(),role:$('workerRole').value.trim(),phone:$('workerPhone').value.trim()}));
+  submit('invForm',s=>s.inventory.push({item:$('invItem').value.trim(),category:$('invCategory').value,qty:numberValue('invQty'),min:numberValue('invMin')}));
+  submit('planForm',s=>s.plans.push({crop:$('planCrop').value.trim(),area:$('planArea').value.trim(),date:$('planDate').value,notes:$('planNotes').value.trim()}));
+  renderOther();loadRecord();renderEggs();renderBirds();
+  if(!location.hash)location.hash='home';
+})();
+
+</script>
+</body>
+</html>
