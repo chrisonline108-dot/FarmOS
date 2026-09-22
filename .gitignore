@@ -6,3 +6,4 @@ node_modules/
 .agents/
 .work/
 supabase/.temp/
+public/

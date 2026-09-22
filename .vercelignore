@@ -1,0 +1,10 @@
+.work/
+.agents/
+.git/
+supabase/
+tests/
+*-desktop.png
+*-mobile.png
+verify.cjs
+build-update.cjs
+skills-lock.json

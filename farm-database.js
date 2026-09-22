@@ -21,12 +21,12 @@ window.FarmDatabase=(()=>{
   const raw=await res.text();let data;try{data=raw?JSON.parse(raw):null;}catch{throw Error('Unexpected response from Supabase');}
   if(!res.ok)throw Error(data?.message||`Supabase request failed (${res.status})`);return data;
  }
- async function all(table,filter=''){let out=[];for(let offset=0;;offset+=1000){const rows=await request(table+'?select=*'+filter+'&order=id.asc&offset='+offset+'&limit=1000');out.push(...rows);if(rows.length<1000)return out;}}
- async function rows(table,filter=''){if(table==='task_occurrences')return request(table+'?select=*'+filter+'&order=occurrence_date.asc&limit=10000');return all(table,filter);}
+ async function all(table,filter=''){let out=[];const order=table==='task_occurrences'?'task_id.asc,occurrence_date.asc':table==='farm_members'?'email.asc':'id.asc';for(let offset=0;;offset+=1000){const rows=await request(table+'?select=*'+filter+'&order='+order+'&offset='+offset+'&limit=1000');out.push(...rows);if(rows.length<1000)return out;}}
+ const rows=all;
  async function insert(table,data,options=''){return request(table+options,{method:'POST',body:data});}
  async function update(table,row,data){const result=await request(table+'?id=eq.'+row.id+(row.updated_at?'&updated_at=eq.'+encodeURIComponent(row.updated_at):''),{method:'PATCH',body:data});if(!result?.length)throw Error('This record changed on another device. Refresh and review it before saving again.');return result;}
  const rpc=(name,body)=>request('rpc/'+name,{method:'POST',body});
- return {rows,request,insert,update,rpc,hasSession:()=>!!session,email:()=>session?.user?.email,
+ return {rows,request,insert,update,rpc,token,hasSession:()=>!!session,email:()=>session?.user?.email,
   sendCode:email=>auth('otp',{email,create_user:true}),
   async verifyCode(email,input){let body={email,token:input,type:'email'};try{const url=new URL(input);const hash=url.searchParams.get('token_hash')||url.searchParams.get('token');if(hash)body={token_hash:hash,type:url.searchParams.get('type')||'magiclink'};}catch{}return auth('verify',body);},
   password:(email,password)=>auth('token?grant_type=password',{email,password}),
