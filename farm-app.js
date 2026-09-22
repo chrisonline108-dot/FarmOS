@@ -33,11 +33,11 @@
   async function refresh({initial=false}={}){
    if(loading)return;loading=true;
    try{
-    {const farms=await api.rows('farms','&slug=eq.green-peas');farm=farms[0];if(!farm)throw Error('This account has no Green Peas farm access. Sign in using the authorized owner email.');}
+    {const farms=await api.rows('farms','&slug=eq.green-peas');farm=farms[0];if(!farm)throw Error('Green Peas data is unavailable. Check the connection and use Refresh to try again.');}
     if(initial){try{await api.importLegacy(farm.id);}catch(e){notice('Prior data has not been imported: '+e.message);throw e;}}
-    const names=['areas','beds','workers','coops','crops','plantings','planting_plans','tasks','task_occurrences','coop_daily_records','coop_cleaning','inventory','harvest_records','farm_records','task_assignees','crop_stage_history','chicken_count_history','farm_seasons','farm_members','marketplace_products','marketplace_transactions','breakfast_items','breakfast_ingredients','breakfast_records','inventory_transactions'];
+    const names=['areas','beds','workers','coops','crops','plantings','planting_plans','tasks','task_occurrences','coop_daily_records','coop_cleaning','inventory','harvest_records','farm_records','task_assignees','crop_stage_history','chicken_count_history','farm_seasons','marketplace_products','marketplace_transactions','breakfast_items','breakfast_ingredients','breakfast_records','inventory_transactions'];
     const results=await Promise.all(names.map(async name=>[name,await api.rows(name,'&farm_id=eq.'+farm.id)]));
-    tables=Object.fromEntries(results);projectState();loaded=true;$('authPanel').hidden=true;$('syncStatus').textContent='Saved in Supabase · '+api.email();
+    tables=Object.fromEntries(results);projectState();loaded=true;$('syncStatus').textContent='Saved in Supabase';
     document.querySelectorAll('.view form button[type=submit]').forEach(b=>b.disabled=false);
     renderAllViews();if(initial){loadRecord();$('birdsA').value=state.birds[COOPS[0]]??'';$('birdsB').value=state.birds[COOPS[1]]??'';}
     notice('');
@@ -51,7 +51,7 @@
    for(const old of before)if(old.id&&!after.some(x=>x.id===old.id)){if(remove)await remove(old);else await api.request(table+'?id=eq.'+old.id,{method:'DELETE'});}
   }
   async function change(fn){
-   if(!loaded){toast('Sign in and load farm data before saving.');return false;}
+   if(!loaded){toast('Farm data is still loading. Please try again.');return false;}
    if(saving){toast('A save is in progress.');return false;}saving=true;
    const before=structuredClone(state),next=structuredClone(state);fn(next);
    try{
@@ -227,7 +227,7 @@
   function renderSchedule(){
    document.querySelectorAll('[data-schedule-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scheduleMode===scheduleMode)));
    const period=schedule.range(scheduleMode,scheduleAnchor,byId('farm_seasons',$('scheduleSeasonView').value));if(!period){$('scheduleRange').textContent='Season dates TBC';$('scheduleCalendar').innerHTML='<p class="meta">Add or select a farm season to view its schedule.</p>';return;}const [start,end]=period;$('scheduleRange').textContent=start===end?fmt(start):fmt(start)+' – '+fmt(end);$('scheduleAnchor').value=scheduleAnchor;
-   if(!loaded){$('scheduleCalendar').innerHTML='<p class="meta">Sign in to load Schedule.</p>';return;}
+   if(!loaded){$('scheduleCalendar').innerHTML='<p class="meta">Loading Schedule…</p>';return;}
    scheduleItems=collectEvents(start,end);const dates=[];for(let date=start;date<=end;date=schedule.plus(date,1))dates.push(date);
    $('scheduleCalendar').className='schedule-calendar '+scheduleMode.toLowerCase();
    $('scheduleCalendar').innerHTML=dates.filter(date=>!['Season','Year'].includes(scheduleMode)||scheduleItems.some(e=>e.date===date)).map(date=>`<div class="schedule-day ${date===today()?'is-today':''}"><h3>${schedule.parse(date).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})}</h3>${scheduleItems.filter(e=>e.date===date).map(eventHTML).join('')||'<p class="meta">No scheduled records</p>'}</div>`).join('');
@@ -263,9 +263,6 @@
   });
   $('scheduleAnchor').addEventListener('change',()=>{if($('scheduleAnchor').value){scheduleAnchor=$('scheduleAnchor').value;renderSchedule();}});
   document.addEventListener('change',async e=>{const box=e.target;if(!box.dataset.eventTask)return;box.disabled=true;try{await api.rpc('set_task_status',{p_task_id:box.dataset.eventTask,p_date:box.dataset.eventDate,p_status:box.checked?'Completed':'Open'});await refresh();toast('Task and Schedule updated');}catch(error){box.checked=!box.checked;notice(error.message);}finally{box.disabled=false;}});
-  $('authSend').addEventListener('click',async()=>{const email=$('authEmail').value.trim();if(!$('authEmail').reportValidity())return;try{await api.sendCode(email);$('authVerify').hidden=false;$('authMessage').textContent='Email sent. Enter its code, or paste the complete sign-in link from the email. Do not open the link before pasting it here.';}catch(e){$('authMessage').textContent=e.message;}});
-  $('authForm').addEventListener('submit',async e=>{e.preventDefault();try{await api.verifyCode($('authEmail').value.trim(),$('authCode').value.trim());await refresh({initial:true});toast('Signed in. Farm data loaded from Supabase.');}catch(error){$('authMessage').textContent=error.message;}});
-  $('signOut').addEventListener('click',async()=>{await api.signOut();location.reload();});
   $('syncRefresh').addEventListener('click',()=>refresh().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&loaded&&!saving)refresh().catch(()=>{});});
   setInterval(()=>{if(document.visibilityState==='visible'&&loaded&&!saving)refresh().catch(()=>{});},15000);
@@ -276,9 +273,8 @@
   const assignedIds=id=>(tables.task_assignees||[]).filter(a=>a.task_id===id).map(a=>a.worker_id);
   const assignedNames=id=>assignedIds(id).map(workerName).filter(Boolean);
   const chips=names=>names.length?names.map(n=>`<span class="chip">${escape(n)}</span>`).join(''):'<span class="meta">Worker TBC</span>';
-  const manager=()=>tables.farm_members?.some(m=>['owner','manager'].includes(m.role));
   async function perform(fn,message='Saved'){
-   if(!loaded||saving){toast(loaded?'A save is in progress.':'Sign in first.');return false;}
+   if(!loaded||saving){toast(loaded?'A save is in progress.':'Farm data is still loading. Please try again.');return false;}
    saving=true;document.body.classList.add('saving');try{await fn();await refresh();toast(message);return true;}catch(e){notice('Not saved: '+e.message);return false;}finally{saving=false;document.body.classList.remove('saving');}
   }
   function renderCropViews(){
@@ -343,10 +339,10 @@
   });
 
   let aiBusy=false,aiConversation=null,aiActions=[];
-  async function assistantRequest(body){const response=await fetch('/api/ai',{method:'POST',headers:{Authorization:'Bearer '+await api.token(),'Content-Type':'application/json'},body:JSON.stringify(body)});let result;try{result=await response.json();}catch{throw Error('Farm Assistant requires the Vercel app or the local server with /api/ai enabled.');}if(!response.ok)throw Error(result.error||'Farm Assistant unavailable');return result;}
+  async function assistantRequest(body){const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});let result;try{result=await response.json();}catch{throw Error('Farm Assistant requires the Vercel app or the local server with /api/ai enabled.');}if(!response.ok)throw Error(result.error||'Farm Assistant unavailable');return result;}
   function actionDisplay(value,key){if(Array.isArray(value))return value.map(v=>actionDisplay(v,key==='assignee_ids'?'worker_id':key)).join(', ');if(value&&typeof value==='object')return Object.entries(value).map(([k,v])=>k.replaceAll('_',' ')+': '+actionDisplay(v,k)).join('\n');if(value===null||value==='')return 'TBC';const tablesByKey={task_id:'tasks',worker_id:'workers',area_id:'areas',bed_id:'beds',crop_id:'crops',coop_id:'coops',to_coop_id:'coops',inventory_id:'inventory',menu_item_id:'breakfast_items',season_id:'farm_seasons'};const row=byId(tablesByKey[key],value);return row?(row.name||row.title||row.code||row.item):String(value);}
   async function loadAI(){if(!loaded)return;const conversations=await api.rows('ai_conversations','&farm_id=eq.'+farm.id);options('aiConversation',conversations,'title','Choose conversation');if(aiConversation&&!conversations.some(c=>c.id===aiConversation))aiConversation=null;$('aiConversation').value=aiConversation||'';if(!aiConversation){$('aiMessages').innerHTML='<p class="meta">Start a conversation to ask about your farm.</p>';$('aiPending').innerHTML='';return;}const [messages,actions]=await Promise.all([api.rows('ai_messages','&conversation_id=eq.'+aiConversation),api.rows('ai_actions','&conversation_id=eq.'+aiConversation)]);$('aiMessages').innerHTML=messages.sort((a,b)=>a.created_at.localeCompare(b.created_at)).map(m=>`<div class="ai-message ${m.role}"><b>${m.role==='user'?'You':'Farm Assistant'}</b><div style="white-space:pre-wrap">${escape(m.content)}</div></div>`).join('');aiActions=actions;$('aiPending').innerHTML=actions.filter(a=>a.status==='Pending').map(a=>`<div class="card"><h3>Confirm: ${escape(a.summary)}</h3><pre style="white-space:pre-wrap">${escape(actionDisplay(a.arguments))}</pre><button class="btn primary" data-ai-confirm="${a.id}">Confirm</button> <button class="btn" data-ai-cancel="${a.id}">Cancel</button></div>`).join('');}
-  async function newConversation(){if(!loaded){toast('Sign in first.');return;}const rows=await api.insert('ai_conversations',{farm_id:farm.id,title:'Farm conversation'});aiConversation=rows[0].id;await loadAI();}
+  async function newConversation(){if(!loaded){toast('Farm data is still loading. Please try again.');return;}const rows=await api.insert('ai_conversations',{farm_id:farm.id,title:'Farm conversation'});aiConversation=rows[0].id;await loadAI();}
   $('aiFloating').addEventListener('click',()=>{location.hash='assistant';loadAI().catch(e=>{$('aiStatus').textContent=e.message;});});
   window.addEventListener('hashchange',()=>{if(location.hash==='#assistant')loadAI().catch(e=>{$('aiStatus').textContent=e.message;});});
   $('aiNew').addEventListener('click',()=>newConversation().catch(e=>{$('aiStatus').textContent=e.message;}));
@@ -357,5 +353,5 @@
   document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.aiSuggestion){$('aiInput').value=b.dataset.aiSuggestion;location.hash='assistant';$('aiInput').focus();}const id=b.dataset.aiConfirm||b.dataset.aiCancel;if(id&&!aiBusy){aiBusy=true;b.disabled=true;try{const result=await assistantRequest({operation:'decide',action_id:id,confirm:!!b.dataset.aiConfirm});$('aiStatus').textContent='Action '+result.status.toLowerCase()+'.';await refresh();await loadAI();}catch(error){$('aiStatus').textContent=error.message;}finally{aiBusy=false;b.disabled=false;}}});
 
   function navigate(){const hash=location.hash.slice(1)||'home';document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id===hash));document.querySelectorAll('nav a').forEach(el=>el.classList.toggle('active',el.hash===location.hash));}window.addEventListener('hashchange',navigate);if(!location.hash)location.hash='home';navigate();
-  renderAllViews();loadRecord();document.querySelectorAll('.view form button[type=submit]').forEach(b=>b.disabled=true);if(api.hasSession())refresh({initial:true}).catch(()=>{});
+  renderAllViews();loadRecord();document.querySelectorAll('.view form button[type=submit]').forEach(b=>b.disabled=true);refresh({initial:true}).catch(()=>{});
 })();
