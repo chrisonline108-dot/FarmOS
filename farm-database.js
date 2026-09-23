@@ -5,7 +5,7 @@ window.FarmDatabase=(()=>{
   const headers={apikey:config.publishableKey,'Content-Type':'application/json',Prefer:prefer};if(range)headers.Range=range;
   const res=await fetch(config.url+'/rest/v1/'+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});
   const raw=await res.text();let data;try{data=raw?JSON.parse(raw):null;}catch{throw Error('Unexpected response from Supabase');}
-  if(!res.ok)throw Error(data?.message||`Supabase request failed (${res.status})`);return data;
+  if(!res.ok){const error=Error(data?.message||`Supabase request failed (${res.status})`);error.status=res.status;throw error;}return data;
  }
  async function all(table,filter=''){let out=[];const order=table==='task_occurrences'?'task_id.asc,occurrence_date.asc':table==='farm_members'?'email.asc':'id.asc';for(let offset=0;;offset+=1000){const rows=await request(table+'?select=*'+filter+'&order='+order+'&offset='+offset+'&limit=1000');out.push(...rows);if(rows.length<1000)return out;}}
  const rows=all;

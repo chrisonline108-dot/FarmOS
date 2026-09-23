@@ -163,8 +163,8 @@
     $('cropRows').innerHTML=state.crops.map((c,i)=>`<tr><td>${escape(c.name)}</td><td>${escape(c.location)}</td><td>${fmt(c.planted)}</td><td>${escape(c.stage)}</td><td><button class="btn" data-advance="${i}">Advance</button></td></tr>`).join('')||'<tr><td colspan="5">Not recorded yet</td></tr>';
     $('homeCrops').innerHTML=state.crops.slice(0,4).map(c=>`<div class="clean"><b>${escape(c.name)}</b><p>${escape(c.location)} · ${escape(c.stage)}</p></div>`).join('')||empty;
     $('kpiCrops').textContent=state.crops.length?state.crops.filter(c=>!['Planned','Finished'].includes(c.stage)).length:'Not recorded yet';
-    $('invRows').innerHTML=state.inventory.map((x,i)=>`<tr><td>${escape(x.item)}</td><td>${escape(x.category)}</td><td>${x.qty??'TBC'}</td><td>${x.min??'TBC'}</td><td>${x.qty==null||x.min==null?'TBC':x.qty<x.min?'Low':'OK'}</td><td><button class="btn" data-count="${i}">Record count</button> <button class="btn" data-minus="${i}" ${x.qty==null?'disabled':''}>−</button> <button class="btn" data-plus="${i}" ${x.qty==null?'disabled':''}>+</button></td></tr>`).join('');
-    $('planList').innerHTML=state.plans.map((p,i)=>`<div class="row"><div style="flex:1"><b>${escape(p.crop)} · ${escape(p.area)}</b><p class="meta">${fmt(p.date)} · ${display(p.notes)}</p></div><button class="btn danger" data-del-plan="${i}">Remove</button></div>`).join('')||empty;
+    $('invRows').innerHTML=state.inventory.map((x,i)=>`<tr><td>${escape(x.item)}</td><td>${escape(x.category)}</td><td>${x.qty??'TBC'} ${escape(x.unit)}</td><td>${x.min??'TBC'}</td><td>${x.qty==null||x.min==null?'TBC':x.qty<x.min?'Low':'OK'}</td><td><button class="btn" data-count="${i}">Record count</button> <button class="btn" data-minus="${i}" ${x.qty==null?'disabled':''}>−</button> <button class="btn" data-plus="${i}" ${x.qty==null?'disabled':''}>+</button></td></tr>`).join('');
+    $('planList').innerHTML=state.plans.map((p,i)=>`<div class="row"><div style="flex:1"><b>${escape(p.crop)} · ${escape(p.area)}</b><p class="meta">${fmt(p.date)} · ${display(p.notes)}</p><label>Assigned Worker${workerPicker(p,'planting_plans')}</label></div><button class="btn danger" data-del-plan="${i}">Remove</button></div>`).join('')||empty;
   }
   document.addEventListener('click',async e=>{
     const link=e.target.closest('[data-open-coop]');if(link){$('activeCoop').value=link.dataset.openCoop;loadRecord();}
@@ -277,10 +277,59 @@
    if(!loaded||saving){toast(loaded?'A save is in progress.':'Farm data is still loading. Please try again.');return false;}
    saving=true;document.body.classList.add('saving');try{await fn();await refresh();toast(message);return true;}catch(e){notice('Not saved: '+e.message);return false;}finally{saving=false;document.body.classList.remove('saving');}
   }
+  function workerPicker(row,table='plantings'){
+   return `<select aria-label="Assigned worker for ${escape(row.name||row.crop)}" data-crop-worker="${row.id}" data-worker-table="${table}" ${row.stage==='Finished'?'disabled':''}><option value="">Unassigned</option>${(tables.workers||[]).filter(w=>!w.archived||w.id===row.worker_id).map(w=>`<option value="${w.id}" ${w.id===row.worker_id?'selected':''}>${escape(w.name)}${w.archived?' (archived)':''}</option>`).join('')}</select>`;
+  }
+  function harvestHistory(c){
+   const history=(tables.harvest_records||[]).filter(h=>h.planting_id===c.id).sort((a,b)=>(b.harvested_at||b.harvest_date).localeCompare(a.harvested_at||a.harvest_date));
+   const kg=history.filter(h=>h.unit?.trim().toLowerCase()==='kg').reduce((total,h)=>total+Number(h.quantity||0),0);
+   return `<details><summary>Total harvested: ${escape(Number(kg.toFixed(6)))} kg · ${history.length} harvests</summary>${history.map(h=>`<p>${h.harvested_at?escape(new Date(h.harvested_at).toLocaleString()):fmt(h.harvest_date)} · ${display(h.quantity)} ${display(h.unit)} · ${display(bedName(h.bed_id)||areaName(h.area_id))} · ${display(workerName(h.worker_id))}${h.notes?'<br>'+escape(h.notes):''}</p>`).join('')||'<p class="meta">No harvests recorded yet.</p>'}</details>`;
+  }
   function renderCropViews(){
-   $('cropRows').innerHTML=state.crops.map(c=>`<tr class="${c.stage==='Finished'?'finished-crop':''}"><td>${display(c.name)}</td><td>${display(c.location)}</td><td>${fmt(c.planted)}</td><td>${escape(c.stage)}</td><td>${c.stage_changed_at?escape(new Date(c.stage_changed_at).toLocaleString()):'Not recorded yet'}</td><td>${c.stage!==stages[0]?`<button class="btn" data-stage-id="${c.id}" data-direction="previous">${c.stage==='Finished'?'Reopen crop':'Previous stage'}</button>`:''}${c.stage!=='Finished'?`<button class="btn" data-stage-id="${c.id}" data-direction="advance">Advance</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6">Not recorded yet</td></tr>';
+   $('cropRows').innerHTML=state.crops.map(c=>{const active=!['Planned','Finished'].includes(c.stage),since=c.stage_changed_at?new Date(c.stage_changed_at):null,days=since?Math.max(0,Math.floor((Date.now()-since.getTime())/86400000)):'TBC';return `<tr class="${c.stage==='Finished'?'finished-crop':''}"><td>${display(c.name)}${harvestHistory(c)}</td><td>${display(c.location||areaName(c.area_id))}</td><td>${fmt(c.planted)}</td><td>${escape(c.stage)}</td><td>${fmt(c.expected_harvest_on)}</td><td>${days}</td><td>${workerPicker(c)}</td><td>${active?`<button class="btn primary" data-harvest="${c.id}">Harvest</button> <button class="btn" data-finish-crop="${c.id}">Finish Crop</button>`:''}${c.stage!==stages[0]?`<button class="btn" data-stage-id="${c.id}" data-direction="previous">${c.stage==='Finished'?'Reopen crop':'Previous stage'}</button>`:''}${!['Finished','Ready to harvest'].includes(c.stage)?`<button class="btn" data-stage-id="${c.id}" data-direction="advance">Advance</button>`:''}</td></tr>`;}).join('')||'<tr><td colspan="8">Not recorded yet</td></tr>';
    $('cropHistory').innerHTML=(tables.crop_stage_history||[]).slice().sort((a,b)=>b.changed_at.localeCompare(a.changed_at)).map(h=>`<p>${display(cropName(h.crop_id))} · ${display(bedName(h.bed_id))}: ${display(h.previous_stage)} → ${display(h.new_stage)} · ${escape(new Date(h.changed_at).toLocaleString())} · ${display(h.changed_by_email)} · ${display(h.reason)}</p>`).join('')||'<p class="meta">Not recorded yet</p>';
   }
+  document.addEventListener('change',async e=>{
+   const el=e.target;if(!el.dataset.cropWorker)return;
+   const table=el.dataset.workerTable,row=byId(table,el.dataset.cropWorker);if(!row)return;
+   el.disabled=true;const ok=await perform(()=>api.update(table,row,{worker_id:el.value||null}),'Assigned worker saved');
+   if(!ok){el.value=row.worker_id||'';el.disabled=false;}
+  });
+  let harvestSession=null,harvestPlantingId=null,harvestBusy=false;
+  function openHarvest(id){
+   if(saving||!loaded)return;const c=byId('plantings',id);if(!c||['Planned','Finished'].includes(c.stage))return;
+   harvestPlantingId=id;harvestSession=window.FarmHarvest.session(data=>api.rpc('record_crop_harvest',data),crypto.randomUUID());
+   $('harvestForm').reset();$('harvestFields').disabled=false;$('harvestConfirm').disabled=false;$('harvestCancel').disabled=false;
+   $('harvestStatus').textContent='';$('harvestCrop').textContent=cropName(c.crop_id)+' · '+(bedName(c.bed_id)||areaName(c.area_id)||'Location not recorded');
+   const now=new Date();$('harvestDateTime').value=dateKey(now)+'T'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+   options('harvestWorker',state.workers,'name','Not recorded');$('harvestWorker').value=state.workers.some(w=>w.id===c.worker_id)?c.worker_id:'';
+   const crop=byId('crops',c.crop_id),linked=byId('inventory',crop.inventory_id);
+   const candidates=state.inventory.filter(i=>!i.coop_id&&(!i.unit||i.unit.trim().toLowerCase()==='kg')&&(['Produce','Crops','Marketplace','Other'].includes(i.category)||i.item.trim().toLowerCase()===crop.name.trim().toLowerCase())&&!tables.crops.some(other=>other.id!==crop.id&&other.inventory_id===i.id));
+   $('harvestInventory').innerHTML='<option value="">Automatically match or create produce inventory</option>'+candidates.map(i=>`<option value="${i.id}">${escape(i.item)} · ${i.qty??'TBC'} ${i.unit?'kg':'(confirm kg)'}</option>`).join('');
+   $('harvestInventoryLabel').hidden=!!linked;$('harvestInventory').value=linked?.id||'';
+   $('harvestInventoryHint').textContent=linked?`Adds kg to ${linked.item} (current stock: ${linked.qty??'TBC'} ${linked.unit||'unit not set'}).`:'Choose existing stock if this produce is already in Inventory. Selecting an item without a unit confirms its quantity is in kg. A new item starts at 0 kg. Unknown stock needs a count first.';
+   $('harvestDialog').showModal();
+  }
+  $('harvestCancel').addEventListener('click',()=>{if(!harvestBusy&&!harvestSession?.pending)$('harvestDialog').close();});
+  $('harvestDialog').addEventListener('cancel',e=>{if(harvestBusy||harvestSession?.pending)e.preventDefault();});
+  $('harvestForm').addEventListener('submit',async e=>{
+   e.preventDefault();if(harvestBusy||saving||!harvestSession)return;
+   harvestBusy=true;saving=true;$('harvestConfirm').disabled=true;$('harvestCancel').disabled=true;
+   const values={plantingId:harvestPlantingId,quantity:$('harvestAmount').value,dateTime:$('harvestDateTime').value,workerId:$('harvestWorker').value,notes:$('harvestNotes').value,inventoryId:$('harvestInventory').value};
+   $('harvestFields').disabled=true;$('harvestStatus').textContent='Saving harvest and inventory…';
+   try{
+    await harvestSession.submit(values);$('harvestDialog').close();toast('Harvest saved; produce inventory increased.');
+    try{await refresh();}catch{notice('Harvest saved. Refresh to load the updated history and inventory.');}
+   }catch(error){
+    const uncertain=harvestSession.pending;
+    $('harvestStatus').textContent=uncertain?'The response was interrupted. Retry Confirm Harvest to safely check the same harvest; it will only be added once.':error.message;
+    $('harvestFields').disabled=uncertain;$('harvestCancel').disabled=uncertain;
+   }finally{harvestBusy=false;saving=false;$('harvestConfirm').disabled=false;}
+  });
+  document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
+   if(b.dataset.harvest)openHarvest(b.dataset.harvest);
+   if(b.dataset.finishCrop&&confirm('Finish this crop cycle? Harvest history stays available, and new harvests require reopening the crop.'))await perform(()=>api.rpc('finish_crop',{p_id:b.dataset.finishCrop}),'Crop finished');
+  });
   function renderUpgrades(){
    if(!loaded)return;renderCropViews();options('taskOwner',state.workers,'name','');
    for(const [id,chipId] of [['taskOwner','taskAssigneeChips'],['scheduleWorker','scheduleAssigneeChips']])$(chipId).innerHTML=chips(selectedIds(id).map(workerName).filter(Boolean));
@@ -317,7 +366,7 @@
    $('breakfastHistory').innerHTML=records.slice().sort((a,b)=>b.created_at.localeCompare(a.created_at)).map(r=>`<p>${fmt(r.record_date)} · ${display(byId('breakfast_items',r.menu_item_id)?.name)} · ${escape(r.action)} · ${quantityText(r.quantity)} servings</p>`).join('')||emptyMarkup;
    $('breakfastHistory').innerHTML+='<h3>Ingredient usage</h3>'+tables.inventory_transactions.filter(t=>t.type==='Breakfast Usage').slice().sort((a,b)=>b.created_at.localeCompare(a.created_at)).map(t=>`<p>${escape(new Date(t.created_at).toLocaleString())} · ${display(byId('inventory',t.inventory_id)?.item)} · ${quantityText(t.quantity==null?null:-t.quantity)} ${display(byId('inventory',t.inventory_id)?.unit)} · ${display(t.reason)}</p>`).join('');
    options('productInventory',state.inventory,'item','Create new inventory item');
-   const existing=$('inventoryHistory');if(existing)existing.innerHTML=tables.inventory_transactions.slice().sort((a,b)=>b.created_at.localeCompare(a.created_at)).map(t=>`<p>${escape(new Date(t.created_at).toLocaleString())} · ${display(byId('inventory',t.inventory_id)?.item)} · ${display(t.type)} · ${quantityText(t.previous_quantity)} → ${quantityText(t.new_quantity)} · ${display(t.reason)}</p>`).join('')||emptyMarkup;
+   const existing=$('inventoryHistory');if(existing)existing.innerHTML=tables.inventory_transactions.slice().sort((a,b)=>b.created_at.localeCompare(a.created_at)).map(t=>{const h=t.type==='Harvest'?byId('harvest_records',t.source_record_id):null,i=byId('inventory',t.inventory_id);return `<p>${escape(new Date(h?.harvested_at||t.created_at).toLocaleString())} · ${display(i?.item)} · ${t.quantity==null?'Count':(t.quantity>0?'+':'')+quantityText(t.quantity)} ${escape(h?.unit||i?.unit)} · ${display(t.type)} · ${quantityText(t.previous_quantity)} → ${quantityText(t.new_quantity)}${h?' · '+display(bedName(h.bed_id)||areaName(h.area_id))+' · '+display(workerName(h.worker_id)):''} · ${display(h?.notes||t.reason)}</p>`;}).join('')||emptyMarkup;
   }
   function openProduct(id){$('productForm').reset();$('productId').value=id||'';if(id){const p=byId('marketplace_products',id);for(const [field,el] of Object.entries({name:'Name',description:'Description',category:'Category',source:'Source',inventory_id:'Inventory',unit:'Unit',stock_per_unit:'Factor',price:'Price',currency:'Currency',status:'Status'}))$('product'+el).value=p[field]??'';if(!$('productUnit').value){$('productUnit').value='custom';$('productCustomUnit').value=p.unit;}}$('productEditor').hidden=false;}
   $('productNew').addEventListener('click',()=>openProduct());

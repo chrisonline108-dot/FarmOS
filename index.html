@@ -286,7 +286,25 @@ input,select{width:100%;min-height:44px;border:1px solid var(--line);border-radi
         <select id="cropStage"><option>Planned</option><option>Active</option><option>Vegetative</option><option>Flowering</option><option>Fruit development</option><option>Ready to harvest</option><option>Finished</option></select>
         <button class="btn primary" type="submit">Add</button>
       </form>
-      <div class="tablewrap"><table><thead><tr><th>Crop</th><th>Bed</th><th>Planted</th><th>Stage</th><th>Expected harvest</th><th>Days in stage</th><th>Assigned work</th><th>Actions</th></tr></thead><tbody id="cropRows"></tbody></table></div><div id="cropHistory" class="card" hidden></div>
+      <div class="tablewrap"><table><thead><tr><th>Crop / Harvest history</th><th>Bed</th><th>Planted</th><th>Stage</th><th>Expected harvest</th><th>Days in stage</th><th>Assigned Worker</th><th>Actions</th></tr></thead><tbody id="cropRows"></tbody></table></div><details><summary>Crop stage history</summary><div id="cropHistory" class="card"></div></details>
+      <dialog id="harvestDialog" aria-labelledby="harvestTitle" style="width:min(540px,calc(100% - 32px));max-height:90vh;overflow:auto;border:1px solid #bdd0c0;border-radius:16px;padding:24px">
+        <form id="harvestForm">
+          <h3 id="harvestTitle">Harvest</h3><p id="harvestCrop" class="meta"></p>
+          <fieldset id="harvestFields" style="border:0;padding:0;margin:0">
+            <div class="grid2">
+              <label>Harvest amount (kg)<input id="harvestAmount" type="number" min="0" step="any" required autofocus></label>
+              <label>Harvest date/time<input id="harvestDateTime" type="datetime-local" required></label>
+              <label>Worker<select id="harvestWorker"></select></label>
+              <label id="harvestInventoryLabel">Produce inventory<select id="harvestInventory"></select></label>
+              <label>Notes (optional)<textarea id="harvestNotes"></textarea></label>
+            </div>
+            <p id="harvestInventoryHint" class="meta"></p>
+          </fieldset>
+          <p id="harvestStatus" role="status"></p>
+          <button class="btn primary" id="harvestConfirm" type="submit">Confirm Harvest</button>
+          <button class="btn" id="harvestCancel" type="button">Cancel</button>
+        </form>
+      </dialog>
     </div>
   </section>
 
@@ -319,12 +337,13 @@ input,select{width:100%;min-height:44px;border:1px solid var(--line);border-radi
       <div class="section-title"><div><h2>Inventory</h2><div class="sub">Seeds, feed, treatments, fertilizers/amendments, irrigation parts, packaging, tools and farm supplies.</div></div><a class="btn" href="#home">Back</a></div>
       <form id="invForm" class="form five">
         <input id="invItem" required placeholder="Item">
-        <select id="invCategory"><option>Feed</option><option>Seeds</option><option>Seedlings</option><option>Treatment</option><option>Fertilizer / amendment</option><option>Irrigation</option><option>Nursery</option><option>Chicken bedding</option><option>Cleaning</option><option>Packaging</option><option>Tools / PPE</option><option>Other</option></select>
+        <select id="invCategory"><option>Feed</option><option>Produce</option><option>Seeds</option><option>Seedlings</option><option>Treatment</option><option>Fertilizer / amendment</option><option>Irrigation</option><option>Nursery</option><option>Chicken bedding</option><option>Cleaning</option><option>Packaging</option><option>Tools / PPE</option><option>Other</option></select>
         <input id="invQty" type="number" min="0" step="0.1" required placeholder="Quantity">
         <input id="invMin" type="number" min="0" step="0.1" required placeholder="Minimum">
         <button class="btn primary" type="submit">Add</button>
       </form>
       <div class="tablewrap"><table><thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Min</th><th>Status</th><th>Adjust</th></tr></thead><tbody id="invRows"></tbody></table></div>
+      <details><summary>Inventory transaction history</summary><div id="inventoryHistory"></div></details>
       <div class="notice"><b>Next inventory fields:</b> unit, supplier, purchase price, purchase date, expiry date (where applicable) and usage history. Quantities/minimums remain TBC until a physical count is entered.</div>
     </div>
   </section>
@@ -354,6 +373,6 @@ input,select{width:100%;min-height:44px;border:1px solid var(--line);border-radi
 
 <div id="toast" class="toast" aria-live="polite"></div>
 
-<script src="supabase-config.js"></script><script src="schedule-core.js"></script><script src="farm-database.js"></script><script src="farm-app.js"></script>
+<script src="supabase-config.js"></script><script src="schedule-core.js"></script><script src="harvest-core.js"></script><script src="farm-database.js"></script><script src="farm-app.js"></script>
 </body>
 </html>
